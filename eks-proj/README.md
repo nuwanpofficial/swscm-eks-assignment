@@ -1,58 +1,166 @@
+# AWS EKS Cluster Deployment with Dynamic NGINX Ingress Controller Scaling
 
-# Welcome to your CDK Python project!
+This project provides an Infrastructure as Code (IaC) solution for deploying an Amazon EKS cluster with environment-aware NGINX Ingress Controller scaling using AWS CDK. It automatically adjusts the number of NGINX Ingress Controller replicas based on the deployment environment (development, staging, or production).
 
-This is a blank project for CDK development with Python.
+The solution leverages AWS CDK to create and manage the EKS cluster infrastructure while using custom resources to dynamically configure the NGINX Ingress Controller deployment. It provides environment-specific scaling with 1 replica for development and 2 replicas for staging/production environments, ensuring optimal resource utilization and availability based on the deployment context.
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+Key features include:
+- Automated EKS cluster deployment with configurable node capacity
+- Dynamic NGINX Ingress Controller scaling based on environment
+- Integration with AWS Systems Manager Parameter Store for environment configuration
+- Custom IAM role and user mappings for cluster access
+- Comprehensive testing framework for configuration validation
 
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the `.venv`
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
-
-To manually create a virtualenv on MacOS and Linux:
-
+## Repository Structure
 ```
-$ python -m venv .venv
-```
-
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
-
-```
-$ source .venv/bin/activate
-```
-
-If you are a Windows platform, you would activate the virtualenv like this:
-
-```
-% .venv\Scripts\activate.bat
+aws/cdk/eks-proj/
+├── app.py                         # Main CDK application entry point
+├── cdk.json                      # CDK configuration file
+├── eks_proj/                     # Core CDK stack implementation
+│   └── eks_proj_stack.py        # Main stack defining EKS cluster and resources
+├── lambda/                       # Lambda function implementations
+│   └── helm_values/             # Helm chart value configuration handler
+│       ├── helmval.py           # Environment-based replica count logic
+│       └── package/             # Lambda function dependencies
+├── tests/                       # Test suite
+│   └── unit/                   # Unit tests for Lambda functions
+└── requirements.txt            # Python package dependencies
 ```
 
-Once the virtualenv is activated, you can install the required dependencies.
+## Usage Instructions
+### Prerequisites
+- AWS CLI configured with appropriate credentials
+- Python 3.13 or later
+- AWS CDK CLI version 2.201.0 or later
+- Docker (for local development)
+- kubectl CLI tool
 
+### Installation
+
+1. Clone the repository and set up a virtual environment:
+```bash
+# Create and activate virtual environment
+# Bash:
+python -m venv .venv
+source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
+
+# PowerShell:
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
-$ pip install -r requirements.txt
+
+2. Install dependencies:
+```bash
+# Bash/PowerShell:
+pip install -r requirements.txt
 ```
 
-At this point you can now synthesize the CloudFormation template for this code.
-
+3. Bootstrap CDK (if not already done in your AWS account):
+```bash
+# Bash/PowerShell:
+cdk bootstrap
 ```
-$ cdk synth
+
+### Quick Start
+
+1. Deploy the stack:
+```bash
+# Bash/PowerShell:
+cdk deploy
 ```
 
-To add additional dependencies, for example other CDK libraries, just add
-them to your `setup.py` file and rerun the `pip install -r requirements.txt`
-command.
+2. Verify the deployment:
+```bash
+# Bash:
+aws eks update-kubeconfig --name eks-helm-cluster --region <your-region>
+kubectl get pods -n ingress-nginx
 
-## Useful commands
+# PowerShell:
+aws eks update-kubeconfig --name eks-helm-cluster --region $region
+kubectl get pods -n ingress-nginx
+```
 
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
+### Cluster Access Configuration
 
-Enjoy!
+To grant cluster access to users or roles, modify the following placeholders in `eks_proj/eks_proj_stack.py`:
+- For IAM users: Replace `USERNAME` with the actual IAM username
+- For IAM roles: Replace `ROLENAME` with the actual IAM role name
+
+You can modify the environment directly in the CDK stack code by updating the `string_value` parameter in `eks_proj/eks_proj_stack.py`:
+```python
+ssm_env_para = ssm.StringParameter(self, 'eks-helm',
+                                  parameter_name='/platform/account/env',
+                                  string_value='development'  # Change to 'staging' or 'production'
+                                  )
+```
+
+2. Check NGINX Ingress Controller replicas:
+```bash
+# Bash/PowerShell:
+kubectl get deployment -n ingress-nginx ingress-nginx-controller
+```
+
+### Troubleshooting
+
+1. EKS Cluster Access Issues
+- Problem: Unable to access EKS cluster
+- Solution: Verify IAM permissions and run:
+```bash
+# Bash:
+aws eks get-token --cluster-name eks-helm-cluster
+
+# PowerShell:
+aws eks get-token --cluster-name eks-helm-cluster
+```
+
+2. NGINX Ingress Controller Deployment Issues
+- Problem: Ingress controller pods not starting
+- Solution: Check events and logs:
+```bash
+# Bash/PowerShell:
+kubectl describe pods -n ingress-nginx
+kubectl logs -n ingress-nginx deployment/ingress-nginx-controller
+```
+
+## Data Flow
+The solution implements an environment-aware configuration flow for EKS cluster resources.
+
+```ascii
+[SSM Parameter Store] --> [Lambda Function] --> [Custom Resource] --> [Helm Chart] --> [EKS Cluster]
+     (env value)           (replica logic)      (configuration)      (deployment)     (execution)
+```
+
+Component interactions:
+1. SSM Parameter Store holds the environment configuration
+2. Lambda function reads the environment and determines replica count
+3. Custom Resource triggers configuration updates
+4. Helm chart applies the configuration to the cluster
+5. EKS cluster maintains the desired state
+
+## Infrastructure
+
+![Infrastructure diagram](./docs/infra.svg)
+
+### VPC Resources
+- VPC with 2 availability zones (CIDR: 172.18.0.0/16)
+
+### EKS Resources
+- EKS Cluster (eks-helm-cluster)
+  - Kubernetes version: 1.32
+  - Instance type: t3a.medium
+  - Default capacity: 2 nodes
+
+### Lambda Resources
+- Function: eks-helm-lambda
+  - Runtime: Python 3.13
+  - Handler: helmval.handler
+  - Purpose: Manages Helm chart values based on environment
+
+### IAM Resources
+- User mapping: USERNAME → system:masters
+- Role mapping: ROLENAME → system:masters
+
+### SSM Resources
+- Parameter: /platform/account/env
+  - Type: String
+  - Default value: development
