@@ -1,0 +1,22 @@
+digraph INFRA {
+  node [ color = "black", fillcolor = "#E6E6E6", height =1, style = "filled,bold,rounded", fontname = "Arial" ];
+  "eks-vpc" [ label = "eks-vpc
+(AWS::EC2::VPC)", shape =rectangle ];
+  "eks-helm-cluster" [ label = "eks-helm-cluster
+(AWS::EKS::Cluster)", shape =rectangle, fillcolor = "#B7E0FF" ];
+  "eks-helm" [ label = "eks-helm
+(AWS::SSM::Parameter)", shape =rectangle ];
+  "eks-helm-lambda" [ label = "eks-helm-lambda
+(AWS::Lambda::Function)", shape =rectangle, fillcolor = "#B7E0FF" ];
+  "helm-values-cr" [ label = "helm-values-cr
+(AWS::CloudFormation::CustomResource)", shape =rectangle ];
+  "nginx-ingess-chart" [ label = "nginx-ingess-chart
+(Custom::HelmChart)", shape =rectangle ];
+  "eks-helm-cluster" -> "eks-vpc";
+  "eks-helm-lambda" -> "eks-helm";
+  "helm-values-cr" -> "eks-helm-lambda";
+  "helm-values-cr" -> "eks-helm";
+  "nginx-ingess-chart" -> "eks-helm-cluster";
+  "nginx-ingess-chart" -> "eks-helm-lambda";
+  "nginx-ingess-chart" -> "helm-values-cr";
+}

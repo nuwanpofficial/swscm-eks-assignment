@@ -93,6 +93,11 @@ ssm_env_para = ssm.StringParameter(self, 'eks-helm',
                                   string_value='development'  # Change to 'staging' or 'production'
                                   )
 ```
+- 'deleopment' will create 1 ingress-nginx pod.
+- 'staging' will create 2 ingress-nginx pods.
+- 'production' will create 2 ingress-nginx pods.
+
+If any other value than 'development', 'staging' or 'production' is provided as the ssm paramter value, the ingress-nginx pod count will be 0. 
 
 2. Check NGINX Ingress Controller replicas:
 ```bash
