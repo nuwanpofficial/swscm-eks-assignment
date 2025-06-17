@@ -83,8 +83,8 @@ kubectl get pods -n ingress-nginx
 ### Cluster Access Configuration
 
 To grant cluster access to users or roles, modify the following placeholders in `eks_proj/eks_proj_stack.py`:
-- For IAM users: Replace `USERNAME` with the actual IAM username
-- For IAM roles: Replace `ROLENAME` with the actual IAM role name
+- For IAM users: Replace `USERNAME` with the actual IAM username and uncomment lines 76 - 81
+- For IAM roles: Replace `ROLENAME` with the actual IAM role name and uncomment lines 84 - 89
 
 You can modify the environment directly in the CDK stack code by updating the `string_value` parameter in `eks_proj/eks_proj_stack.py`:
 ```python
