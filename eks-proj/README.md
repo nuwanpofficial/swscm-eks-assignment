@@ -93,7 +93,7 @@ ssm_env_para = ssm.StringParameter(self, 'eks-helm',
                                   string_value='development'  # Change to 'staging' or 'production'
                                   )
 ```
-- 'deleopment' will create 1 ingress-nginx pod.
+- 'development' will create 1 ingress-nginx pod.
 - 'staging' will create 2 ingress-nginx pods.
 - 'production' will create 2 ingress-nginx pods.
 
