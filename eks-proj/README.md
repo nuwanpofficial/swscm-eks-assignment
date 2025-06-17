@@ -105,6 +105,44 @@ If any other value than 'development', 'staging' or 'production' is provided as 
 kubectl get deployment -n ingress-nginx ingress-nginx-controller
 ```
 
+
+## Testing
+
+The project includes a comprehensive test suite using pytest to validate the NGINX Ingress Controller configuration logic.
+
+### Running Tests
+
+```bash
+# Bash/PowerShell
+
+# Detailed test output with verbose flag (-v):
+pytest -v tests/unit/
+# Shows test function names and results with PASSED/FAILED status
+
+# Standard test output:
+pytest tests/unit/
+# Shows only dots for passed tests and F for failures
+# More concise output suitable for CI/CD pipelines
+```
+
+### Test Coverage
+
+The test suite covers the following functionality:
+
+1. Environment-based Configuration
+   - Validates replica count for development environment (1 replica)
+   - Validates replica count for staging environment (2 replicas)
+   - Validates replica count for production environment (2 replicas)
+
+2. Resource Management
+   - Tests create/update resource functionality
+   - Tests delete resource handling
+   - Validates handler function behavior
+
+The tests use mocking to isolate the testing of the Lambda function from AWS services (boto3) and the custom resource helper.
+
+
+
 ### Troubleshooting
 
 1. EKS Cluster Access Issues
