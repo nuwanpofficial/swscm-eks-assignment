@@ -86,11 +86,13 @@ To grant cluster access to users or roles, modify the following placeholders in 
 - For IAM users: Replace `USERNAME` with the actual IAM username and uncomment lines 76 - 81
 - For IAM roles: Replace `ROLENAME` with the actual IAM role name and uncomment lines 84 - 89
 
-You can modify the environment directly in the CDK stack code by updating the `string_value` parameter in `eks_proj/eks_proj_stack.py`:
+You can modify the environment directly in the CDK stack code by updating the `account_env` variable in `eks_proj/eks_proj_stack.py`:
 ```python
+account_env = 'development' # Change to 'staging' or 'production'
+
 ssm_env_para = ssm.StringParameter(self, 'eks-helm',
                                   parameter_name='/platform/account/env',
-                                  string_value='development'  # Change to 'staging' or 'production'
+                                  string_value=account_env 
                                   )
 ```
 - 'development' will create 1 ingress-nginx pod.
