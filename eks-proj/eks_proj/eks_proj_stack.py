@@ -18,6 +18,8 @@ class EksProjStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
+        account_env = 'development'
+
         vpc = ec2.Vpc(self, "eks-vpc",
                       max_azs=2,
                       cidr="172.18.0.0/16",
@@ -34,7 +36,7 @@ class EksProjStack(Stack):
         
         ssm_env_para = ssm.StringParameter(self, 'eks-helm',
                                            parameter_name='/platform/account/env',
-                                           string_value='development'
+                                           string_value=account_env
                                            )
         
         helm_lambda = _lambda.Function(self, 'eks-helm-lambda',
@@ -49,7 +51,8 @@ class EksProjStack(Stack):
         helm_cr = CustomResource(self, 'helm-values-cr',
                                  service_token=helm_lambda.function_arn,
                                  properties={
-                                     "date": datetime.datetime.now(datetime.timezone.utc)
+                                     "env": account_env,
+                                    #  "date": datetime.datetime.now(datetime.timezone.utc)
                                  })
         
         helm_cr.node.add_dependency(ssm_env_para)  
